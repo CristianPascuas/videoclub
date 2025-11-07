@@ -1,3 +1,7 @@
 {
-    "claudeCodeChat.permissions.yoloMode": false
+    "claudeCodeChat.permissions.yoloMode": false,
+    "sonarlint.connectedMode.project": {
+        "connectionId": "cristianpascuas",
+        "projectKey": "CristianPascuas_videoclub2"
+    }
 }

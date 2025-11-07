@@ -1,29 +1,35 @@
 <?php
-require_once '../../include/conex.php';
-require_once __DIR__ . '/../herramientas/PHPMailer/src/PHPMailer.php';
-require_once __DIR__ . '/../herramientas/PHPMailer/src/SMTP.php';
-require_once __DIR__ . '/../herramientas/PHPMailer/src/Exception.php';
-require_once __DIR__ . '/../herramientas/key/key.php';
 
+namespace VideoClub\Herramientas\Key;
+
+use VideoClub\Config\Configuration;
+use VideoClub\Database\Connection;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
 if ($_POST) {
-    $email = $_POST['email'];
+    $email = isset($_POST['email']) ? $_POST['email'] : '';
     
     // Validar que el email existe en la base de datos
-    $conexion = Conectarse();
-    $consulta = "SELECT * FROM persona WHERE Email = '$email'";
-    $resultado = mysqli_query($conexion, $consulta);
+    $conexion = Connection::connect();
+    $consulta = "SELECT * FROM persona WHERE Email = ?";
+    
+    $stmt = mysqli_prepare($conexion, $consulta);
+    mysqli_stmt_bind_param($stmt, 's', $email);
+    mysqli_stmt_execute($stmt);
+    $resultado = mysqli_stmt_get_result($stmt);
     
     if (mysqli_num_rows($resultado) > 0) {
         // Generar nueva clave aleatoria
         $nueva_clave = generarClaveAleatoria();
         
         // Actualizar la clave en la base de datos
-        $update = "UPDATE persona SET Clave = '$nueva_clave' WHERE Email = '$email'";
-        if (mysqli_query($conexion, $update)) {
+        $update = "UPDATE persona SET Clave = ? WHERE Email = ?";
+        $stmt_update = mysqli_prepare($conexion, $update);
+        mysqli_stmt_bind_param($stmt_update, 'ss', $nueva_clave, $email);
+        
+        if (mysqli_stmt_execute($stmt_update)) {
             // Enviar correo con la nueva clave
             if (enviarCorreoRecuperacion($email, $nueva_clave)) {
                 header("Location: ../../index.php?recovery=success");
@@ -56,4 +62,3 @@ function generarClaveAleatoria($longitud = 8) {
     }
     return $clave;
 }
-?>
