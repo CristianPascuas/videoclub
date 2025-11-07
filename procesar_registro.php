@@ -1,19 +1,26 @@
 <?php
-require_once 'include/conex.php';
-require_once 'herramientas/key/ctrlregistro.php';
+
+namespace VideoClub;
+
+use VideoClub\Config\Configuration;
+use VideoClub\Database\Connection;
+use VideoClub\Herramientas\Key\CtrlRegistro;
 
 if ($_POST) {
-    $nombre = $_POST['nombre'];
-    $apellido = $_POST['apellido'];
-    $identificacion = $_POST['identificacion'];
-    $email = $_POST['email'];
-    $clave = $_POST['clave'];
+    $nombre = isset($_POST['nombre']) ? $_POST['nombre'] : '';
+    $apellido = isset($_POST['apellido']) ? $_POST['apellido'] : '';
+    $identificacion = isset($_POST['identificacion']) ? $_POST['identificacion'] : '';
+    $email = isset($_POST['email']) ? $_POST['email'] : '';
+    $clave = isset($_POST['clave']) ? $_POST['clave'] : '';
     
-    $conexion = Conectarse();
+    $conexion = Connection::connect();
     
     // Verificar si el email ya existe
-    $verificar = "SELECT * FROM persona WHERE Email = '$email'";
-    $resultado_verificar = mysqli_query($conexion, $verificar);
+    $verificar = "SELECT * FROM persona WHERE Email = ?";
+    $stmt_verificar = mysqli_prepare($conexion, $verificar);
+    mysqli_stmt_bind_param($stmt_verificar, 's', $email);
+    mysqli_stmt_execute($stmt_verificar);
+    $resultado_verificar = mysqli_stmt_get_result($stmt_verificar);
     
     if (mysqli_num_rows($resultado_verificar) > 0) {
         // El email ya existe
@@ -22,8 +29,11 @@ if ($_POST) {
     }
     
     // Verificar si la identificación ya existe
-    $verificar_id = "SELECT * FROM persona WHERE Identificacion = '$identificacion'";
-    $resultado_verificar_id = mysqli_query($conexion, $verificar_id);
+    $verificar_id = "SELECT * FROM persona WHERE Identificacion = ?";
+    $stmt_verificar_id = mysqli_prepare($conexion, $verificar_id);
+    mysqli_stmt_bind_param($stmt_verificar_id, 's', $identificacion);
+    mysqli_stmt_execute($stmt_verificar_id);
+    $resultado_verificar_id = mysqli_stmt_get_result($stmt_verificar_id);
     
     if (mysqli_num_rows($resultado_verificar_id) > 0) {
         // La identificación ya existe
@@ -32,10 +42,13 @@ if ($_POST) {
     }
     
     // Insertar nuevo usuario (Id_Rol = 5 para cliente, Id_Validacion = 1 para validado)
-    $insertar = "INSERT INTO persona (Nombre, Apellido, Identificacion, Email, Clave, Id_Rol, Id_Validacion) 
-                 VALUES ('$nombre', '$apellido', '$identificacion', '$email', '$clave', 5, 1)";
+    $insertar = "INSERT INTO persona (Nombre, Apellido, Identificacion, Email, Clave, Id_Rol, Id_Validacion)
+                 VALUES (?, ?, ?, ?, ?, 5, 1)";
     
-    if (mysqli_query($conexion, $insertar)) {
+    $stmt_insertar = mysqli_prepare($conexion, $insertar);
+    mysqli_stmt_bind_param($stmt_insertar, 'sssss', $nombre, $apellido, $identificacion, $email, $clave);
+    
+    if (mysqli_stmt_execute($stmt_insertar)) {
         // Registro exitoso - Enviar correo de bienvenida
         $correo_enviado = enviarCorreoBienvenida($email, $nombre, $apellido);
         
@@ -58,4 +71,3 @@ if ($_POST) {
     header("Location: index.php");
     exit();
 }
-?>
