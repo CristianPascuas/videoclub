@@ -1,11 +1,16 @@
 <?php
-require_once('../include/config.php'); 
+
+namespace VideoClub\Controlador;
+
+use VideoClub\Config\Configuration;
+use VideoClub\Database\Connection;
+
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
-include('../include/conex.php');
-session_name($session_name);
+
+session_name(Configuration::SESSION_NAME);
 session_start();
-$conn=Conectarse();
+$conn = Connection::connect();
 
 switch ($_REQUEST['action']) {
     case 'listarPeliculas':
@@ -13,9 +18,9 @@ switch ($_REQUEST['action']) {
         $jTableResult['success'] = false;
         $jTableResult['peliculas'] = "";
         
-        $query = "SELECT p.Id_Peliculas, p.Titulo, p.Director, p.AñoLanzamiento, p.Stock, d.Distribuidora as Nombre_Distribuidora 
-                  FROM peliculas p 
-                  LEFT JOIN distribuidora d ON p.Id_Distribuidora = d.Id_Distribuidora 
+        $query = "SELECT p.Id_Peliculas, p.Titulo, p.Director, p.AñoLanzamiento, p.Stock, d.Distribuidora as Nombre_Distribuidora
+                  FROM peliculas p
+                  LEFT JOIN distribuidora d ON p.Id_Distribuidora = d.Id_Distribuidora
                   ORDER BY p.Titulo ASC";
         
         $resultado = mysqli_query($conn, $query);
@@ -46,7 +51,7 @@ switch ($_REQUEST['action']) {
                             <td><span class="'.$stockClass.'">'.$stockText.'</span></td>
                             <td>'.$pelicula['Nombre_Distribuidora'].'</td>
                             <td>
-                                <button class="btn btn-primary btn-sm me-1" onclick="comprarPelicula('.$pelicula['Id_Peliculas'].', \''.$pelicula['Titulo'].'\', '.$pelicula['Stock'].')" 
+                                <button class="btn btn-primary btn-sm me-1" onclick="comprarPelicula('.$pelicula['Id_Peliculas'].', \''.$pelicula['Titulo'].'\', '.$pelicula['Stock'].')"
                                         '.($pelicula['Stock'] > 0 ? '' : 'disabled').'>
                                     <i class="fas fa-shopping-cart"></i> Comprar
                                 </button>
@@ -75,17 +80,21 @@ switch ($_REQUEST['action']) {
         $jTableResult['peliculas'] = "";
         
         $busqueda = isset($_POST['busqueda']) ? $_POST['busqueda'] : '';
+        $busquedaParam = '%' . $busqueda . '%';
         
-        $query = "SELECT p.Id_Peliculas, p.Titulo, p.Director, p.AñoLanzamiento, p.Stock, d.Distribuidora as Nombre_Distribuidora 
-                  FROM peliculas p 
-                  LEFT JOIN distribuidora d ON p.Id_Distribuidora = d.Id_Distribuidora 
-                  WHERE p.Titulo LIKE '%".$busqueda."%' 
-                  OR p.Director LIKE '%".$busqueda."%' 
-                  OR p.AñoLanzamiento LIKE '%".$busqueda."%'
-                  OR d.Distribuidora LIKE '%".$busqueda."%'
+        $query = "SELECT p.Id_Peliculas, p.Titulo, p.Director, p.AñoLanzamiento, p.Stock, d.Distribuidora as Nombre_Distribuidora
+                  FROM peliculas p
+                  LEFT JOIN distribuidora d ON p.Id_Distribuidora = d.Id_Distribuidora
+                  WHERE p.Titulo LIKE ?
+                  OR p.Director LIKE ?
+                  OR p.AñoLanzamiento LIKE ?
+                  OR d.Distribuidora LIKE ?
                   ORDER BY p.Titulo ASC";
         
-        $resultado = mysqli_query($conn, $query);
+        $stmt = mysqli_prepare($conn, $query);
+        mysqli_stmt_bind_param($stmt, 'ssss', $busquedaParam, $busquedaParam, $busquedaParam, $busquedaParam);
+        mysqli_stmt_execute($stmt);
+        $resultado = mysqli_stmt_get_result($stmt);
         
         if($resultado && mysqli_num_rows($resultado) > 0) {
             $tabla = '<div class="table-responsive">
@@ -113,7 +122,7 @@ switch ($_REQUEST['action']) {
                             <td><span class="'.$stockClass.'">'.$stockText.'</span></td>
                             <td>'.$pelicula['Nombre_Distribuidora'].'</td>
                             <td>
-                                <button class="btn btn-primary btn-sm me-1" onclick="comprarPelicula('.$pelicula['Id_Peliculas'].', \''.$pelicula['Titulo'].'\', '.$pelicula['Stock'].')" 
+                                <button class="btn btn-primary btn-sm me-1" onclick="comprarPelicula('.$pelicula['Id_Peliculas'].', \''.$pelicula['Titulo'].'\', '.$pelicula['Stock'].')"
                                         '.($pelicula['Stock'] > 0 ? '' : 'disabled').'>
                                     <i class="fas fa-shopping-cart"></i> Comprar
                                 </button>
@@ -144,12 +153,15 @@ switch ($_REQUEST['action']) {
         $idPelicula = isset($_POST['idPelicula']) ? (int)$_POST['idPelicula'] : 0;
         
         if($idPelicula > 0) {
-            $query = "SELECT p.Id_Peliculas, p.Titulo, p.Director, p.AñoLanzamiento, p.Stock, d.Distribuidora as Nombre_Distribuidora 
-                      FROM peliculas p 
-                      LEFT JOIN distribuidora d ON p.Id_Distribuidora = d.Id_Distribuidora 
-                      WHERE p.Id_Peliculas = $idPelicula";
+            $query = "SELECT p.Id_Peliculas, p.Titulo, p.Director, p.AñoLanzamiento, p.Stock, d.Distribuidora as Nombre_Distribuidora
+                      FROM peliculas p
+                      LEFT JOIN distribuidora d ON p.Id_Distribuidora = d.Id_Distribuidora
+                      WHERE p.Id_Peliculas = ?";
             
-            $resultado = mysqli_query($conn, $query);
+            $stmt = mysqli_prepare($conn, $query);
+            mysqli_stmt_bind_param($stmt, 'i', $idPelicula);
+            mysqli_stmt_execute($stmt);
+            $resultado = mysqli_stmt_get_result($stmt);
             
             if($resultado && mysqli_num_rows($resultado) > 0) {
                 $pelicula = mysqli_fetch_array($resultado);
@@ -176,4 +188,3 @@ switch ($_REQUEST['action']) {
 }
 
 mysqli_close($conn);
-?>
