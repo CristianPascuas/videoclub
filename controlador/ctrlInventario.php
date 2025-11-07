@@ -1,11 +1,16 @@
 <?php
-require_once('../include/config.php'); 
+
+namespace VideoClub\Controlador;
+
+use VideoClub\Config\Configuration;
+use VideoClub\Database\Connection;
+
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
-include('../include/conex.php');
-session_name($session_name);
+
+session_name(Configuration::SESSION_NAME);
 session_start();
-$conn = Conectarse();
+$conn = Connection::connect();
 
 switch ($_REQUEST['action']) {
     case 'listarInventario':
