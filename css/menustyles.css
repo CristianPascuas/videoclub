@@ -1,0 +1,236 @@
+/* Sidebar lateral responsive usando variables existentes (styles.css) */
+:root{
+  --sidebar-width: 250px;
+  --sidebar-bg: var(--bg-overlay, #ffffff);
+  --sidebar-border: var(--bg-border, rgba(0,0,0,.05));
+  --sidebar-text: var(--text-dark, #333);
+  --sidebar-accent: var(--primary-color, #0dfd71);
+  --sidebar-accent-hover: var(--primary-hover, #0bd737);
+  --sidebar-radius: 14px;
+}
+
+body.sidebar-open{
+  overflow:hidden;
+}
+
+.btn-menu-toggle{
+  position:fixed;
+  top:.75rem;
+  left:.75rem;
+  z-index:1045;
+  padding:.55rem .8rem;
+  border-radius:8px;
+  box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
+
+.sidebar{
+  position:fixed;
+  top:0;
+  left:0;
+  height:100vh;
+  width:var(--sidebar-width);
+  background:var(--sidebar-bg);
+  backdrop-filter: blur(8px);
+  border-right:1px solid var(--sidebar-border);
+  box-shadow:0 0 0 1px rgba(0,0,0,.02), 0 8px 24px rgba(0,0,0,.12);
+  padding-top:.5rem;
+  display:flex;
+  flex-direction:column;
+  transform:translateX(-105%);
+  transition:transform .35s cubic-bezier(.65,.05,.36,1);
+  z-index:1046;
+  overflow-y:auto;
+  scrollbar-width:thin;
+}
+
+.sidebar.show{
+  transform:translateX(0);
+}
+
+.sidebar::-webkit-scrollbar{
+  width:6px;
+}
+.sidebar::-webkit-scrollbar-thumb{
+  background:rgba(0,0,0,.15);
+  border-radius:3px;
+}
+
+.sidebar-header{
+  font-size:.95rem;
+  color:var(--sidebar-text);
+  border-bottom:1px solid var(--sidebar-border);
+  margin-bottom:.25rem;
+}
+
+.accordion{
+  --bs-accordion-border-width:0;
+}
+
+.accordion-item{
+  background:transparent;
+  border:0;
+  border-bottom:1px solid var(--sidebar-border);
+}
+
+.accordion-item:last-child{
+  border-bottom:0;
+}
+
+.accordion-button{
+  background:transparent;
+  font-size:.875rem;
+  font-weight:600;
+  color:var(--sidebar-text);
+  padding:.75rem 1rem;
+  transition:background .25s,color .25s;
+  border-radius:0;
+  box-shadow:none !important;
+}
+
+.accordion-button.collapsed{
+  color:var(--sidebar-text);
+}
+
+.accordion-button:not(.collapsed){
+  background:linear-gradient(90deg,var(--sidebar-accent) 0%, var(--sidebar-accent-hover) 100%);
+  color:#fff;
+}
+
+.accordion-button:not(.collapsed)::after{
+  filter:invert(1) brightness(2);
+}
+
+.accordion-button:hover{
+  background:rgba(0,0,0,.04);
+}
+
+.accordion-button:not(.collapsed):hover{
+  background:linear-gradient(90deg,var(--sidebar-accent-hover) 0%, var(--sidebar-accent) 100%);
+}
+
+.accordion-button.single-link{
+  cursor:pointer;
+}
+
+.accordion-button.single-link:hover{
+  background:rgba(0,0,0,.05);
+  color:var(--sidebar-accent);
+}
+
+.accordion-button.single-link::after{
+  display:none;
+}
+
+.accordion-collapse{
+  background:rgba(0,0,0,.02);
+}
+
+.submenu-list .list-group-item{
+  background:transparent;
+  border:0;
+  border-top:1px dashed var(--sidebar-border);
+  padding:.5rem 1.15rem;
+  font-size:.8rem;
+}
+
+.submenu-list .list-group-item:first-child{
+  border-top:0;
+}
+
+.submenu-list a{
+  text-decoration:none;
+  color:var(--sidebar-text);
+  display:block;
+  padding:.25rem 0;
+  position:relative;
+  transition:color .2s, padding-left .2s;
+}
+
+.submenu-list a:hover{
+  color:var(--sidebar-accent);
+  padding-left:.35rem;
+}
+
+.backdrop-sidebar{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  backdrop-filter:blur(2px);
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .3s;
+  z-index:1040;
+}
+
+.backdrop-sidebar.show{
+  opacity:1;
+  visibility:visible;
+}
+
+.app-content{
+  padding-left:0;
+  transition:padding-left .35s;
+  min-height:100vh;
+  width:100%;
+}
+
+@media (min-width: 768px){
+  .btn-menu-toggle{ display:none; }
+  .sidebar{
+    transform:none;
+    border-right:1px solid var(--sidebar-border);
+    width:230px;
+  }
+  .app-content{
+    padding-left:230px;
+  }
+  .backdrop-sidebar{ display:none; }
+}
+
+@media (max-width: 767.98px){
+  .sidebar{
+    width:78%;
+    max-width:300px;
+    border-right:0;
+    border-radius:0 18px 18px 0;
+  }
+  .app-content{
+    /* Altura aproximada del botón + margen (0.75rem top + 0.55rem padding + line-height). Ajusta si cambias el botón */
+    padding-top:3.25rem;
+  }
+}
+
+/* Modo oscuro (opcional si se usa) */
+@media (prefers-color-scheme: dark){
+  .sidebar{
+    background:rgba(30,32,35,.9);
+    --sidebar-text:#e2e5e9;
+    border-right:1px solid rgba(255,255,255,.06);
+  }
+  .accordion-button:hover{
+    background:rgba(255,255,255,.05);
+  }
+  .accordion-collapse{
+    background:rgba(255,255,255,.04);
+  }
+  .submenu-list .list-group-item{
+    border-top:1px dashed rgba(255,255,255,.08);
+  }
+}
+
+/* Accesibilidad foco */
+.accordion-button:focus{
+  outline:2px solid var(--sidebar-accent);
+  outline-offset:2px;
+  box-shadow:none;
+}
+
+.submenu-list a:focus{
+  outline:2px solid var(--sidebar-accent);
+  outline-offset:2px;
+}
+
+/* Suavizar transiciones sin hover para abrir (solo click) */
+.accordion-button{
+  pointer-events: auto;
+}
