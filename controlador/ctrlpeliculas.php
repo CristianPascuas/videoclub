@@ -23,7 +23,9 @@ switch ($_REQUEST['action']) {
                   LEFT JOIN distribuidora d ON p.Id_Distribuidora = d.Id_Distribuidora
                   ORDER BY p.Titulo ASC";
         
-        $resultado = mysqli_query($conn, $query);
+        $stmt = mysqli_prepare($conn, $query);
+        mysqli_stmt_execute($stmt);
+        $resultado = mysqli_stmt_get_result($stmt);
         
         if($resultado && mysqli_num_rows($resultado) > 0) {
             $tabla = '<div class="table-responsive">

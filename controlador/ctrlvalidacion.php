@@ -1,29 +1,40 @@
 <?php
-require_once('../include/config.php'); 
-header('Content-Type: text/html; charset=utf-8');
+namespace VideoClub\Controlador;
+
+use VideoClub\Config\Configuration;
+use VideoClub\Database\Connection;
+
+header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
-include('../include/conex.php');
-session_name($session_name);
+
+session_name(Configuration::SESSION_NAME);
 session_start();
-$conn=Conectarse();
-switch ($_REQUEST['action']) 
+$conn = Connection::connect();
+
+switch ($_REQUEST['action'])
     {
         case 'buscarUsuario':
             $jTableResult = array();
             $jTableResult['success'] = false;
             $jTableResult['resultados'] = "";
             
-            $query = " SELECT p.Id_Persona, p.Nombre, p.Apellido, p.Identificacion, p.Email, p.Id_Validacion, v.nombre_validacion 
-                      FROM persona p 
-                      LEFT JOIN validacion v ON p.Id_Validacion = v.Id_Validacion 
-                      WHERE p.Id_Persona LIKE '%".$_POST['buscarUsu']."%' 
-                      OR p.Nombre LIKE '%".$_POST['buscarUsu']."%' 
-                      OR p.Apellido LIKE '%".$_POST['buscarUsu']."%' 
-                      OR p.Identificacion LIKE '%".$_POST['buscarUsu']."%'
-                      OR p.Email LIKE '%".$_POST['buscarUsu']."%' 
-                      OR v.nombre_validacion LIKE '%".$_POST['buscarUsu']."%'";
+            $busqueda = isset($_POST['buscarUsu']) ? $_POST['buscarUsu'] : '';
+            $busquedaParam = '%' . $busqueda . '%';
             
-            $resultado = mysqli_query($conn, $query);
+            $query = " SELECT p.Id_Persona, p.Nombre, p.Apellido, p.Identificacion, p.Email, p.Id_Validacion, v.nombre_validacion
+                      FROM persona p
+                      LEFT JOIN validacion v ON p.Id_Validacion = v.Id_Validacion
+                      WHERE p.Id_Persona LIKE ?
+                      OR p.Nombre LIKE ?
+                      OR p.Apellido LIKE ?
+                      OR p.Identificacion LIKE ?
+                      OR p.Email LIKE ?
+                      OR v.nombre_validacion LIKE ?";
+            
+            $stmt = mysqli_prepare($conn, $query);
+            mysqli_stmt_bind_param($stmt, 'ssssss', $busquedaParam, $busquedaParam, $busquedaParam, $busquedaParam, $busquedaParam, $busquedaParam);
+            mysqli_stmt_execute($stmt);
+            $resultado = mysqli_stmt_get_result($stmt);
             
             if($resultado && mysqli_num_rows($resultado) > 0) {
                 $tabla = '<div class="table-responsive">
@@ -78,9 +89,12 @@ switch ($_REQUEST['action'])
             $estadoValidacion = isset($_POST['estadoValidacion']) ? (int)$_POST['estadoValidacion'] : 0;
             
             if($usuarioId > 0 && in_array($estadoValidacion, [0, 1])) {
-                $query = "UPDATE persona SET Id_Validacion = $estadoValidacion WHERE Id_Persona = $usuarioId";
+                $query = "UPDATE persona SET Id_Validacion = ? WHERE Id_Persona = ?";
                 
-                if(mysqli_query($conn, $query)) {
+                $stmt = mysqli_prepare($conn, $query);
+                mysqli_stmt_bind_param($stmt, 'ii', $estadoValidacion, $usuarioId);
+                
+                if(mysqli_stmt_execute($stmt)) {
                     $jTableResult['success'] = true;
                     $jTableResult['mensaje'] = "Estado de validación actualizado correctamente";
                 } else {
@@ -95,4 +109,3 @@ switch ($_REQUEST['action'])
         break;
     }
 mysqli_close($conn);
-?>
