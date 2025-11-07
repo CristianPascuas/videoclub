@@ -1,16 +1,26 @@
 <?php
+
+namespace VideoClub;
+
+use VideoClub\Config\Configuration;
+use VideoClub\Database\Connection;
+
+session_name(Configuration::SESSION_NAME);
 session_start();
-require_once 'include/conex.php';
 
 if ($_POST) {
-    $email = $_POST['email'];
-    $clave = $_POST['clave'];
+    $email = isset($_POST['email']) ? $_POST['email'] : '';
+    $clave = isset($_POST['clave']) ? $_POST['clave'] : '';
     
-    $conexion = Conectarse();
+    $conexion = Connection::connect();
     
     // Consultar usuario
-    $consulta = "SELECT * FROM persona WHERE Email = '$email' AND Clave = '$clave'";
-    $resultado = mysqli_query($conexion, $consulta);
+    $consulta = "SELECT * FROM persona WHERE Email = ? AND Clave = ?";
+    
+    $stmt = mysqli_prepare($conexion, $consulta);
+    mysqli_stmt_bind_param($stmt, 'ss', $email, $clave);
+    mysqli_stmt_execute($stmt);
+    $resultado = mysqli_stmt_get_result($stmt);
     
     if (mysqli_num_rows($resultado) > 0) {
         $usuario = mysqli_fetch_array($resultado);
@@ -42,4 +52,3 @@ if ($_POST) {
     header("Location: index.php");
     exit();
 }
-?>
