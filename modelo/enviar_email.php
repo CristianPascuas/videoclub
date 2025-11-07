@@ -43,7 +43,8 @@ function enviarCorreoRecuperacion($email_destino, $nueva_clave) {
         return true;
         
     } catch (Exception $e) {
+        // Log del error sin datos controlados por el usuario
+        error_log("Error al enviar correo de recuperación: " . get_class($e) . " - Código: " . $e->getCode());
         return false;
     }
 }
-?>
